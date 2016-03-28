@@ -1,0 +1,44 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
+
+    defaultConfig {
+        applicationId "com.example.tamzeed.hvacaudioservice"
+        minSdkVersion 14
+        targetSdkVersion 23
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    testCompile 'junit:junit:4.12'
+    compile 'com.android.support:appcompat-v7:23.1.1'
+
+    compile files('libs/httpcore-4.3.jar')
+    compile files('libs/httpmime-4.2.1.jar')
+    compile files('libs/httclient-4.5.2.jar')
+    compile files('libs/google-http-client-1.10.3-beta.jar')
+    compile files('libs/google-oauth-client-jetty-1.13.1-beta.jar')
+    compile files('libs/google-oauth-client-appengine-1.10.1-beta-sources.jar')
+    compile files('libs/google-http-client-android3-1.10.1-beta-sources.jar')
+    compile files('libs/apache-mime4j-core-0.7.2-sources.jar')
+
+}
+
+android {
+    packagingOptions {
+        exclude 'META-INF/NOTICE' // will not include NOTICE file
+        exclude 'META-INF/LICENSE' // will not include LICENSE file
+        exclude 'META-INF/DEPENDENCIES'
+    }
+}
