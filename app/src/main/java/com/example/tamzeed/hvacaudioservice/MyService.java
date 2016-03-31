@@ -1,7 +1,9 @@
 package com.example.tamzeed.hvacaudioservice;
 
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.media.MediaRecorder;
 import android.os.Environment;
 import android.os.Handler;
@@ -18,8 +20,12 @@ import java.util.Date;
  */
 public class MyService extends Service {
 
+    SharedPreferences pref;
+    String url= "http://s200.bcn.ufl.edu/HVAC/fileUp.php";
     Timer timer = new Timer();
     int i=0;
+    String str;
+    String s="";
     MediaRecorder mediaRecorder;
     String filePath="";
     @Override
@@ -27,11 +33,17 @@ public class MyService extends Service {
     {
         return null;
     }
+//    public MyService()
+//    {
+//        pref= getSharedPreferences("myPref", Context.MODE_PRIVATE);
+//        str= pref.getString("id",null);
+//    }
     public void recording()
     {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
         String currentDateandTime = sdf.format(new Date());
-        String s= "/recordings_"+currentDateandTime+".3gp";
+        s= "/"+Constants.deviceName+"_recordings_"+currentDateandTime+".3gp";
+
         Toast.makeText(MyService.this,"recorded: "+s, Toast.LENGTH_LONG).show();
         mediaRecorder= new MediaRecorder();
         filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + s;
@@ -104,7 +116,7 @@ public class MyService extends Service {
                 });
             }
         };
-        timer.schedule(doAsynchronousTask,0,  60000);
+        timer.schedule(doAsynchronousTask,60000,  60000);
 
 
         return START_STICKY;
@@ -139,7 +151,9 @@ public class MyService extends Service {
 
         mediaRecorder.stop();
         mediaRecorder.reset();
-        i++;
+
+        Constants.fileName=s;
+       new sendFile().execute(url);
 
         recording();
         //startService(new Intent(getBaseContext(), MyService.class));
