@@ -30,9 +30,12 @@ public class sendFile extends AsyncTask<String, Integer, String> {
 
     @Override
     protected String doInBackground(String... params) {
-        String uri = params[0];
+       // String uri = params[0];
+        String uri= "http://s200.bcn.ufl.edu/HVAC/fileUp.php";
+        String fileName=params[0];
         try {
 
+            Log.d("XXXXXX: ", Constants.fileName);
             String address;
             MultipartEntity entity;
             File f;
@@ -40,7 +43,8 @@ public class sendFile extends AsyncTask<String, Integer, String> {
             entity = new MultipartEntity(
                     HttpMultipartMode.BROWSER_COMPATIBLE);
             address = Environment.getExternalStorageDirectory().getAbsolutePath()
-                    + Constants.fileName;
+                    +"/"+ "MicReader"+"/"+fileName;
+            //address= Constants.fileName;
             f = new File(address);
             fb = new FileBody(f, "application/octect-stream");
             entity.addPart("fileUp", fb);
@@ -52,6 +56,7 @@ public class sendFile extends AsyncTask<String, Integer, String> {
 
 
 
+            Log.d("XXXXXX: ", "result");
 
             BufferedReader bufferedReader = new BufferedReader(
                     new InputStreamReader(response.getEntity().getContent()));
@@ -62,6 +67,7 @@ public class sendFile extends AsyncTask<String, Integer, String> {
                 stringBuffer.append(line + LineSeparator);
             }
             bufferedReader.close();
+            Log.d("XXXXXX: ", "resusssssslt");
 
             return stringBuffer.toString();
         } catch (ClientProtocolException e) {

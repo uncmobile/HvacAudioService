@@ -6,4 +6,5 @@ package com.example.tamzeed.hvacaudioservice;
 public  class Constants {
     public static String fileName="";
     public static String deviceName="";
+    public static String experimentType="";
 }

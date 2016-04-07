@@ -35,8 +35,27 @@ public class MainActivity extends AppCompatActivity {
         startButton= (Button) findViewById(R.id.button1);
         endButton= (Button) findViewById(R.id.button2);
         editButton= (Button) findViewById(R.id.editButton);
-        endButton.setEnabled(false);
+
         //editButton.setEnabled(false);
+        String strTemp= pref.getString("start", null);
+       // txt.setText(strTemp);
+        if(strTemp!= "yes")
+        {
+
+            endButton.setEnabled(false);
+       //     txt = (TextView) findViewById(R.id.textView2);
+         //   txt.setText("Service is Stopped!!!!");
+           // editButton.setEnabled(false);
+
+
+        }
+        else {
+          //  txt = (TextView) findViewById(R.id.textView2);
+           // txt.setText("Service is Running!!!!");
+            startButton.setEnabled(false);
+            editButton.setEnabled(false);
+
+        }
         addListener();
     }
     public void startService(View view) {
@@ -47,21 +66,38 @@ public class MainActivity extends AppCompatActivity {
         startButton.setEnabled(false);
         endButton.setEnabled(true);
         editButton.setEnabled(false);
+        SharedPreferences.Editor myEditor= pref.edit();
+        myEditor.putString("start", "yes");
+        myEditor.commit();
 
     }
 
     // Method to stop the service
     public void stopService(View view) {
 
-        txt = (TextView) findViewById(R.id.textView2);
-        txt.setText("Service is Stopped!!!!");
-        stopService(new Intent(getBaseContext(), MyService.class));
-        wk.release();
-        startButton.setEnabled(true);
-        endButton.setEnabled(false);
-        editButton.setEnabled(true);
+        try {
+            startButton.setEnabled(true);
+            endButton.setEnabled(false);
+            editButton.setEnabled(true);
+
+            SharedPreferences.Editor myEditor= pref.edit();
+            myEditor.putString("start", "no");
+            myEditor.commit();
+            txt = (TextView) findViewById(R.id.textView2);
+            txt.setText("Service is Stopped!!!!");
+            stopService(new Intent(getBaseContext(), MyService.class));
+            wk.release();
+
+
+
+        }catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
 
     }
+
 
     public void addListener()
     {

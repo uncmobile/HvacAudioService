@@ -22,8 +22,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/editText2"
+        android:hint="Device ID"
         android:layout_above="@+id/button"
         android:layout_centerHorizontal="true"
-        android:layout_marginBottom="89dp"
-        android:text="Device" />
+        android:layout_marginBottom="89dp" />
 </RelativeLayout>

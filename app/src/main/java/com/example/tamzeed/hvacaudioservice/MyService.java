@@ -95,7 +95,7 @@ public class MyService extends Service {
     @Override
     public int onStartCommand(Intent intent,int flags,int startId)
     {
-        recording();
+       // recording();
 
         Toast.makeText(MyService.this, "Service started", Toast.LENGTH_LONG).show();
         final Handler handler = new Handler();
@@ -107,7 +107,8 @@ public class MyService extends Service {
                     @SuppressWarnings("unchecked")
                     public void run() {
                         try {
-                            dest();
+                           // dest();
+                            new AudioRecordClass().startRecord();
                         }
                         catch (Exception e) {
                             // TODO Auto-generated catch block
@@ -116,8 +117,10 @@ public class MyService extends Service {
                 });
             }
         };
-        timer.schedule(doAsynchronousTask,60000,  60000);
+        timer.schedule(doAsynchronousTask,0,  60001);
+       // new AudioRecordClass().startRecord();
 
+      //  new AudioRecordClass().startRecord();
 
         return START_STICKY;
     }
