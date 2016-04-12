@@ -18,6 +18,8 @@ public class AudioRecordClass {
     private long lastFilenum = 0;
     // private byte audioData[] = null;
     //private Thread recordingThread = null;
+    String tempName="";
+    String rawName="";
     String fileName="";
     String s="";
     AudioRecord myRecorder;
@@ -83,15 +85,45 @@ public class AudioRecordClass {
             Log.d("TAG", "Stoppinggg");
             myRecorder.stop();
             myRecorder.release();
-            copyWaveFile(s,getFilename());
+            copyWaveFile(s, getFilename());
 
             //String url= "http://s200.bcn.ufl.edu/HVAC/fileUp.php";
-            new sendFile().execute(this.fileName);
+            sensorFile(tempName);
+            new sendFile().execute("sensor_"+tempName,"sensor",this.rawName);
+            new sendFile().execute(this.fileName,"normal",this.rawName);
 
         }catch (Exception e)
         {
             e.printStackTrace();
         }
+    }
+
+    private void sensorFile(String fileTemp)
+    {
+
+        try {
+
+            String content= Constants.temperature+"     "+Constants.humidity;
+
+            Log.d("cont", content);
+
+            File root = new File(Environment.getExternalStorageDirectory(), "Notes");
+            if (!root.exists()) {
+                root.mkdirs();
+            }
+            File gpxfile = new File(root, "sensor_"+fileTemp+".txt");
+            FileWriter writer = new FileWriter(gpxfile);
+            writer.append("content");
+            writer.flush();
+            writer.close();
+
+
+        }catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+
+
     }
 
     private String getFilename(){
@@ -102,9 +134,16 @@ public class AudioRecordClass {
             file.mkdirs();
         }
        // lastFilenum = System.currentTimeMillis();
+
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
         String currentDateandTime = sdf.format(new Date());
-        s= "/"+Constants.deviceName+"_recordings_"+currentDateandTime;
+        tempName= currentDateandTime;
+        if(Constants.experimentType=="human")
+        {
+            s="/"+"human_"+Constants.deviceName+"_recordings_"+currentDateandTime;
+        }
+        else
+            s= "/"+Constants.deviceName+"_recordings_"+currentDateandTime;
         Log.d("file name",file.getAbsolutePath() + "/" + s+ AUDIO_RECORDER_FILE_EXT_WAV);
         this.fileName=s+ AUDIO_RECORDER_FILE_EXT_WAV;
         return (file.getAbsolutePath() + "/" + this.fileName);
@@ -126,6 +165,7 @@ public class AudioRecordClass {
 
         lastFilenum = System.currentTimeMillis();
         s=file.getAbsolutePath() + "/" +lastFilenum+ AUDIO_RECORDER_TEMP_FILE;
+        this.rawName=lastFilenum+ AUDIO_RECORDER_TEMP_FILE;
         return s;
     }
 

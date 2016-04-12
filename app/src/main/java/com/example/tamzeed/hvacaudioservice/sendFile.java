@@ -28,11 +28,14 @@ import android.widget.Button;
 import android.widget.Toast;
 public class sendFile extends AsyncTask<String, Integer, String> {
 
+    String fileName,rawName,type;
     @Override
     protected String doInBackground(String... params) {
        // String uri = params[0];
         String uri= "http://s200.bcn.ufl.edu/HVAC/fileUp.php";
-        String fileName=params[0];
+        fileName=params[0];
+        rawName=params[2];
+
         try {
 
             Log.d("XXXXXX: ", Constants.fileName);
@@ -40,14 +43,32 @@ public class sendFile extends AsyncTask<String, Integer, String> {
             MultipartEntity entity;
             File f;
             FileBody fb;
-            entity = new MultipartEntity(
-                    HttpMultipartMode.BROWSER_COMPATIBLE);
-            address = Environment.getExternalStorageDirectory().getAbsolutePath()
-                    +"/"+ "MicReader"+"/"+fileName;
-            //address= Constants.fileName;
-            f = new File(address);
-            fb = new FileBody(f, "application/octect-stream");
-            entity.addPart("fileUp", fb);
+            type= params[1];
+
+            if(params[1]=="sensor")
+            {
+                entity = new MultipartEntity(
+                        HttpMultipartMode.BROWSER_COMPATIBLE);
+                address = Environment.getExternalStorageDirectory().getAbsolutePath()
+                        +"/"+ "Notes"+"/"+fileName+".txt";
+                //address= Constants.fileName;
+                f = new File(address);
+                fb = new FileBody(f, "application/octect-stream");
+                entity.addPart("fileText", fb);
+
+            }
+            else{
+                entity = new MultipartEntity(
+                        HttpMultipartMode.BROWSER_COMPATIBLE);
+                address = Environment.getExternalStorageDirectory().getAbsolutePath()
+                        +"/"+ "MicReader"+"/"+fileName;
+                //address= Constants.fileName;
+                f = new File(address);
+                fb = new FileBody(f, "application/octect-stream");
+                entity.addPart("fileUp", fb);
+
+            }
+
             HttpClient httpclient = new DefaultHttpClient();
             HttpPost httppost = new HttpPost(uri);
 
@@ -83,6 +104,25 @@ public class sendFile extends AsyncTask<String, Integer, String> {
     protected void onPostExecute(String result) {
 
         Log.d("RESPONSEXXXXXX: ", result);
+        if(type!="sensor")
+        {
+            fileName = Environment.getExternalStorageDirectory().getAbsolutePath()
+                    +"/"+ "MicReader"+"/"+fileName;
+
+            File file = new File(fileName);
+            boolean deleted = file.delete();
+            Log.d("del", fileName+" "+deleted);
+
+            rawName=Environment.getExternalStorageDirectory().getAbsolutePath()
+                    +"/"+ "MicReader"+"/"+rawName;
+
+            File file1 = new File(rawName);
+            boolean deleted1 = file1.delete();
+            Log.d("del1", rawName+" "+deleted1);
+
+
+        }
+
 
     }
 }

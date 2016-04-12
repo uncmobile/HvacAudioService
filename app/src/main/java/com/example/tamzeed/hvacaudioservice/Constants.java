@@ -7,4 +7,6 @@ public  class Constants {
     public static String fileName="";
     public static String deviceName="";
     public static String experimentType="";
+    public static String temperature="";
+    public static String humidity="";
 }

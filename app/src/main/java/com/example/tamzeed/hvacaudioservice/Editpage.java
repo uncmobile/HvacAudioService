@@ -34,8 +34,9 @@ public class Editpage extends AppCompatActivity {
                 str= ed.getText().toString();
                 if(str!="")
                 {
-                    myEditor.putString("id",str);
-                    myEditor.commit();
+                    myEditor.putString("id", str);
+                    Constants.deviceName=str;
+
 
                 }
                 else
@@ -43,10 +44,14 @@ public class Editpage extends AppCompatActivity {
                     Random rand= new Random();
                     int ran= rand.nextInt();
                     str="not_given"+ ran;
+                    Constants.deviceName=str;
                     myEditor.putString("id",str);
 
 
                 }
+                myEditor.commit();
+
+
                 Intent intent = new Intent(Editpage.this,MainActivity.class);
                 startActivity(intent);
                 Editpage.this.finish();
