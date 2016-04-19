@@ -31,6 +31,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private AlarmBroadcastReciever alarm;
     SensorManager sensorManager;
 
+
     Sensor tempSensor,humidSensor,acceleroSensor,magnetSensor,gyroscopeSensor,barometerSensor;
 
 
@@ -116,7 +117,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         acceleroSensor= sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
         magnetSensor= sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         gyroscopeSensor= sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+
         barometerSensor= sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);
+
         if(tempSensor!=null)
         {
             sensorManager.registerListener(this, tempSensor, 1000);
@@ -124,7 +127,11 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         else
         {
+
             Constants.temperature="temperature: -9999";
+=======
+            Constants.temperature="-9999";
+>>>>>>> 7331eab4c60c6838ee3e0170c115adeefeaddfd0
         }
 
         humidSensor= sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY);
@@ -134,7 +141,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         }
         else
         {
+
             Constants.humidity="humidity: -9999";
+
 
         }
         if(acceleroSensor!=null)
@@ -145,8 +154,34 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         else
         {
 
+
                 Constants.acceloString="accelreometer: -9999";
         }
+
+        if(magnetSensor!=null)
+        {
+            sensorManager.registerListener(this,magnetSensor,1000);
+
+        }
+        else
+        {
+                Constants.magnet="-9999";
+
+        }
+
+        if(gyroscopeSensor!=null)
+        {
+            sensorManager.registerListener(this,gyroscopeSensor,1000);
+
+
+                
+        }
+        else
+        {
+            Constants.gyroString="-9999";
+        }
+
+
 
         if(magnetSensor!=null)
         {
@@ -190,7 +225,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         long diff=curTime - lastUpdate;
         Constants.acceloString="accelreometer: ";
         Constants.magnet="magnet: ";
+
         Constants.gyroString="gyroSensor: ";
+
         boolean flag=false;
 
         try {
@@ -218,7 +255,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
 
                     flag=true;
+
                     Constants.acceloString+="["+event.values[0]+" "+event.values[1]+" "+event.values[2]+"]";
+
 
                 }
             }
@@ -231,11 +270,14 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                     lastUpdate = curTime;
                     flag=true;
 
+
                     Constants.magnet+="["+event.values[0]+" "+event.values[1]+" "+event.values[2]+"]";
+
 
 
                 }
             }
+
             else if(currType== Sensor.TYPE_GYROSCOPE)
             {
                 if((curTime - lastUpdate) > 1000)
@@ -262,8 +304,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             {
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
                 String currentDateandTime = sdf.format(new Date());
+
                 String str= currentDateandTime+" "+Constants.temperature+"  "+Constants.humidity+" "+Constants.baroString+" "
                         +Constants.acceloString+"  "+Constants.magnet+" "+Constants.gyroString;
+
                 Constants.list.add(str);
             }
 
