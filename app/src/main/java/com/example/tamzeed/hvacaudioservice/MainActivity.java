@@ -118,6 +118,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         magnetSensor= sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
         gyroscopeSensor= sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
 
+        humidSensor= sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY);
         barometerSensor= sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);
 
         if(tempSensor!=null)
@@ -132,7 +133,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         }
 
-        humidSensor= sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY);
+
         if(humidSensor!=null)
         {
             sensorManager.registerListener(this, humidSensor, 1000);
@@ -155,31 +156,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 Constants.acceloString="accelreometer: -9999";
         }
-
-        if(magnetSensor!=null)
-        {
-            sensorManager.registerListener(this,magnetSensor,1000);
-
-        }
-        else
-        {
-                Constants.magnet="-9999";
-
-        }
-
-        if(gyroscopeSensor!=null)
-        {
-            sensorManager.registerListener(this,gyroscopeSensor,1000);
-
-
-                
-        }
-        else
-        {
-            Constants.gyroString="-9999";
-        }
-
-
 
         if(magnetSensor!=null)
         {
