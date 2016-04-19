@@ -115,11 +115,9 @@ public class AudioRecordClass {
             FileWriter writer = new FileWriter(gpxfile);
             for (int i=0;i<Constants.list.size();i++)
             {
-<<<<<<< HEAD
+
                 writer.append(Constants.list.get(i));
-=======
-                writer.append(i+"  "+Constants.list.get(i));
->>>>>>> 7331eab4c60c6838ee3e0170c115adeefeaddfd0
+
                 writer.write(System.getProperty("line.separator"));
 
             }

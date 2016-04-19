@@ -129,9 +129,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         {
 
             Constants.temperature="temperature: -9999";
-=======
-            Constants.temperature="-9999";
->>>>>>> 7331eab4c60c6838ee3e0170c115adeefeaddfd0
+
         }
 
         humidSensor= sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY);

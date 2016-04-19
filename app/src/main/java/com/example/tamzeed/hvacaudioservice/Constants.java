@@ -15,10 +15,9 @@ public  class Constants {
     public static String acceloString="";
     public static String gyroString="";
 
-<<<<<<< HEAD
+
     public static  String baroString="";
-=======
->>>>>>> 7331eab4c60c6838ee3e0170c115adeefeaddfd0
+
     public static double[] acceleroArray= new double[3];
     public static ArrayList<String> list= new ArrayList<String>();
 }
