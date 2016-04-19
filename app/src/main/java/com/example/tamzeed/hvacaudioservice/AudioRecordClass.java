@@ -89,8 +89,8 @@ public class AudioRecordClass {
 
             //String url= "http://s200.bcn.ufl.edu/HVAC/fileUp.php";
             sensorFile(tempName);
-            new sendFile().execute("sensor_"+tempName,"sensor",this.rawName);
-            new sendFile().execute(this.fileName,"normal",this.rawName);
+            new sendFile().execute("sensor_" + tempName, "sensor", this.rawName);
+            new sendFile().execute(this.fileName, "normal", this.rawName);
 
         }catch (Exception e)
         {
@@ -113,9 +113,18 @@ public class AudioRecordClass {
             }
             File gpxfile = new File(root, "sensor_"+fileTemp+".txt");
             FileWriter writer = new FileWriter(gpxfile);
-            writer.append("content");
+            for (int i=0;i<Constants.list.size();i++)
+            {
+                writer.append(i+"  "+Constants.list.get(i));
+                writer.write(System.getProperty("line.separator"));
+
+            }
+            writer.write(System.getProperty("line.separator"));
+           // writer.append(content);
             writer.flush();
             writer.close();
+
+            Constants.list.clear();
 
 
         }catch (Exception e)
