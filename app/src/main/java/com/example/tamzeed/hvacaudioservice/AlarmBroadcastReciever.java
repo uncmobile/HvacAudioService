@@ -33,29 +33,12 @@ public class AlarmBroadcastReciever extends BroadcastReceiver {
         PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "YOUR TAG");
         //Acquire the lock
         wl.acquire();
-
-
-
         new AudioRecordClass().startRecord();
-
         wl.release();
     }
 
-    public void setSensorData()
-    {
-
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
-        String currentDateandTime = sdf.format(new Date());
-        String str= currentDateandTime+" "+Constants.temperature+"  "+Constants.humidity;
-        Constants.list.add(str);
-
-
-
-    }
-
-    public void SetAlarm(Context context)
-    {
-        AlarmManager am=(AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+    public void SetAlarm(Context context) {
+        AlarmManager am =(AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, AlarmBroadcastReciever.class);
         intent.putExtra(ONE_TIME, Boolean.FALSE);
         PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent, 0);
@@ -63,16 +46,15 @@ public class AlarmBroadcastReciever extends BroadcastReceiver {
         am.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 60000 , pi);
     }
 
-    public void CancelAlarm(Context context)
-    {
+    public void CancelAlarm(Context context) {
         Intent intent = new Intent(context, AlarmBroadcastReciever.class);
         PendingIntent sender = PendingIntent.getBroadcast(context, 0, intent, 0);
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         alarmManager.cancel(sender);
     }
 
-    public void setOnetimeTimer(Context context){
-        AlarmManager am=(AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+    public void setOnetimeTimer(Context context) {
+        AlarmManager am =(AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, AlarmBroadcastReciever.class);
         intent.putExtra(ONE_TIME, Boolean.TRUE);
         PendingIntent pi = PendingIntent.getBroadcast(context, 0, intent, 0);

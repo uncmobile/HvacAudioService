@@ -5,7 +5,6 @@ package com.example.tamzeed.hvacaudioservice;
  */
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStreamReader;
 
 import org.apache.http.HttpResponse;
@@ -14,59 +13,52 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.HttpMultipartMode;
 import org.apache.http.entity.mime.MultipartEntity;
-import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.FileBody;
 import org.apache.http.impl.client.DefaultHttpClient;
 
-import android.app.Activity;
 import android.os.AsyncTask;
-import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
-import android.widget.Toast;
+import android.widget.TextView;
+
 public class sendFile extends AsyncTask<String, Integer, String> {
 
-    String fileName,rawName,type;
+    String fileNameWithDateTime, rawFileFullPath, type;
+
     @Override
     protected String doInBackground(String... params) {
-       // String uri = params[0];
-        String uri= "http://s200.bcn.ufl.edu/HVAC/fileUp.php";
-        fileName=params[0];
-        rawName=params[2];
+
+        String uri = "http://s200.bcn.ufl.edu/HVAC/fileUp.php";
+        fileNameWithDateTime = params[0];
+        rawFileFullPath = params[2];
+
+        Log.d("SN", "doInBackground(): " + params[0] + ", " + params[1] + ", " + params[2]);
 
         try {
 
-            Log.d("XXXXXX: ", Constants.fileName);
             String address;
             MultipartEntity entity;
             File f;
             FileBody fb;
-            type= params[1];
+            type = params[1];
 
-            if(params[1]=="sensor")
-            {
-                entity = new MultipartEntity(
-                        HttpMultipartMode.BROWSER_COMPATIBLE);
+            if(params[1] == "sensor") {
+                entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
                 address = Environment.getExternalStorageDirectory().getAbsolutePath()
-                        +"/"+ "Notes"+"/"+fileName+".txt";
-                //address= Constants.fileName;
+                        +"/"+ "Notes" + "/" + fileNameWithDateTime;
+                Log.v("SN", "address = " + address);
                 f = new File(address);
                 fb = new FileBody(f, "application/octect-stream");
                 entity.addPart("fileText", fb);
-
             }
             else{
-                entity = new MultipartEntity(
-                        HttpMultipartMode.BROWSER_COMPATIBLE);
+                entity = new MultipartEntity(HttpMultipartMode.BROWSER_COMPATIBLE);
                 address = Environment.getExternalStorageDirectory().getAbsolutePath()
-                        +"/"+ "MicReader"+"/"+fileName;
-                //address= Constants.fileName;
+                        + "/" + "MicReader" + "/" + fileNameWithDateTime;
                 f = new File(address);
+                Log.v("SN", "address = " + address);
                 fb = new FileBody(f, "application/octect-stream");
                 entity.addPart("fileUp", fb);
-
             }
 
             HttpClient httpclient = new DefaultHttpClient();
@@ -74,8 +66,6 @@ public class sendFile extends AsyncTask<String, Integer, String> {
 
             httppost.setEntity(entity);
             HttpResponse response = httpclient.execute(httppost);
-
-
 
             Log.d("XXXXXX: ", "result");
 
@@ -91,6 +81,7 @@ public class sendFile extends AsyncTask<String, Integer, String> {
             Log.d("XXXXXX: ", "resusssssslt");
 
             return stringBuffer.toString();
+
         } catch (ClientProtocolException e) {
             e.printStackTrace();
             return e.toString();
@@ -98,31 +89,31 @@ public class sendFile extends AsyncTask<String, Integer, String> {
             e.printStackTrace();
             return e.toString();
         }
-
     }
 
     protected void onPostExecute(String result) {
 
-        Log.d("RESPONSEXXXXXX: ", result);
-        if(type!="sensor")
-        {
-            fileName = Environment.getExternalStorageDirectory().getAbsolutePath()
-                    +"/"+ "MicReader"+"/"+fileName;
+        Log.d("RESPONSE: ", result);
 
-            File file = new File(fileName);
+        if(type != "sensor") {
+
+            String filePathWithDateTime = Environment.getExternalStorageDirectory().getAbsolutePath()
+                    +"/"+ "MicReader"+"/"+ fileNameWithDateTime;
+
+            File file = new File(filePathWithDateTime);
             boolean deleted = file.delete();
-            Log.d("del", fileName+" "+deleted);
+            Log.d("del", filePathWithDateTime + " deleted = " + deleted);
 
-            rawName=Environment.getExternalStorageDirectory().getAbsolutePath()
-                    +"/"+ "MicReader"+"/"+rawName;
-
-            File file1 = new File(rawName);
+            File file1 = new File(rawFileFullPath);
             boolean deleted1 = file1.delete();
-            Log.d("del1", rawName+" "+deleted1);
-
-
+            Log.d("del", rawFileFullPath + " deleted = " + deleted1);
         }
-
-
+        else {
+            String sensor_file_address = Environment.getExternalStorageDirectory().getAbsolutePath()
+                    +"/"+ "Notes" + "/" + fileNameWithDateTime;
+            File file2 = new File(sensor_file_address);
+            boolean deleted2 = file2.delete();
+            Log.d("del", sensor_file_address + " deleted = " + deleted2);
+        }
     }
 }

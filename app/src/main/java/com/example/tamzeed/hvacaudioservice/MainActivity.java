@@ -13,6 +13,7 @@ import android.util.Log;
 import android.view.View;
 import android.content.SharedPreferences;
 import android.content.Context;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -26,272 +27,172 @@ import java.util.Date;
 import android.telephony.*;
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
-
     private long lastUpdate = 0;
-    private AlarmBroadcastReciever alarm;
+    //private AlarmBroadcastReciever alarm;
+
     SensorManager sensorManager;
-
-
-    Sensor tempSensor,humidSensor,acceleroSensor,magnetSensor,gyroscopeSensor,barometerSensor;
-
+    Sensor tempSensor, humidSensor, acceleroSensor, magnetSensor, gyroscopeSensor, barometerSensor, lightSensor;
 
     Context textCon;
     PowerManager powerM;
     SharedPreferences pref;
     PowerManager.WakeLock wk;
-    TextView txt;
-    MyService ms= new MyService();
-    Button startButton, endButton, editButton, humanButton;
-    int in=0;
+    TextView txt, sensortxt;
+    MyService ms = new MyService();
+    Button startButton, endButton, humanButton;
+
+    HvacMonitorThread hvacMonitoringThread = null;
+
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         TelephonyManager telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
-        Constants.deviceName="DEVICE_"+telephonyManager.getDeviceId();
+        Constants.deviceName = "D" + telephonyManager.getDeviceId();
         Log.d("DEVICE:", Constants.deviceName);
 
-        textCon= this.getApplicationContext();
+        textCon = this.getApplicationContext();
+        //alarm = new AlarmBroadcastReciever();
+        pref = getSharedPreferences("myPref", Context.MODE_PRIVATE);
 
-       // in++;
-
-
-        alarm = new AlarmBroadcastReciever();
-        pref= getSharedPreferences("myPref", Context.MODE_PRIVATE);
-        //Constants.deviceName= pref.getString("id", null);
         txt = (TextView) findViewById(R.id.textView);
-        txt.setText("DEVICE: " + Constants.deviceName);
-       // txt.setText("Service is stopped!!!!"+in);
-        powerM= (PowerManager) getSystemService(POWER_SERVICE);
-        wk = powerM.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-                "MyWakelockTag");
-        startButton= (Button) findViewById(R.id.button1);
-        endButton= (Button) findViewById(R.id.button2);
-       // editButton= (Button) findViewById(R.id.editButton);
+        txt.setText(Constants.deviceName);
+
+        sensortxt = (TextView) findViewById(R.id.textViewSensors);
+
+        powerM = (PowerManager) getSystemService(POWER_SERVICE);
+        wk = powerM.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "MyWakelockTag");
+
+        startButton = (Button) findViewById(R.id.button1);
+        endButton = (Button) findViewById(R.id.button2);
         humanButton = (Button) findViewById(R.id.button3);
 
-        //editButton.setEnabled(false);
-        String strTemp= pref.getString("start", null);
-       // txt.setText(strTemp);
-        if(strTemp!= "yes")
-        {
+        String strTemp = pref.getString("start", null);
 
+        if(strTemp != "yes") {
             endButton.setEnabled(false);
-
-       //     txt = (TextView) findViewById(R.id.textView2);
-         //   txt.setText("Service is Stopped!!!!");
-           // editButton.setEnabled(false);
-
-
         }
         else {
-          //  txt = (TextView) findViewById(R.id.textView2);
-           // txt.setText("Service is Running!!!!");
             startButton.setEnabled(false);
-           // editButton.setEnabled(false);
             humanButton.setEnabled(false);
-
-
         }
+
+        hvacMonitoringThread = new HvacMonitorThread();
+
         sensorInitializer();
         addListener();
     }
 
-    public void onDestroy() {
-
+    public void onDestroy()
+    {
         super.onDestroy();
         if(wk.isHeld())
             wk.release();
-
-        txt.setText("Service is stopped!!!!");
-
+        txt.setText("Service has stopped !!!!");
     }
 
     public void sensorInitializer()
     {
         sensorManager= (SensorManager) getSystemService(SENSOR_SERVICE);
-        tempSensor= sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
-        acceleroSensor= sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        magnetSensor= sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-        gyroscopeSensor= sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
 
-        humidSensor= sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY);
-        barometerSensor= sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);
+        tempSensor = sensorManager.getDefaultSensor(Sensor.TYPE_AMBIENT_TEMPERATURE);
+        acceleroSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        magnetSensor = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
+        gyroscopeSensor = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        humidSensor = sensorManager.getDefaultSensor(Sensor.TYPE_RELATIVE_HUMIDITY);
+        barometerSensor = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE);
+        lightSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LIGHT);
 
-        if(tempSensor!=null)
-        {
-            sensorManager.registerListener(this, tempSensor, 1000);
+        String senlist = "[";
 
-        }
-        else
-        {
-
-            Constants.temperature="temperature: -9999";
-
+        if(tempSensor != null) {
+            sensorManager.registerListener(this, tempSensor, 900);
+            senlist += " TEMP ";
         }
 
-
-        if(humidSensor!=null)
-        {
-            sensorManager.registerListener(this, humidSensor, 1000);
-        }
-        else
-        {
-
-            Constants.humidity="humidity: -9999";
-
-
-        }
-        if(acceleroSensor!=null)
-        {
-            sensorManager.registerListener(this,acceleroSensor,1000);
-
-        }
-        else
-        {
-
-
-                Constants.acceloString="accelreometer: -9999";
+        if(humidSensor != null) {
+            sensorManager.registerListener(this, humidSensor, 900);
+            senlist += " HUM ";
         }
 
-        if(magnetSensor!=null)
-        {
-            sensorManager.registerListener(this,magnetSensor,1000);
-
-        }
-        else
-        {
-                Constants.magnet="magnet: -9999";
-
+        if(acceleroSensor!=null) {
+            sensorManager.registerListener(this,acceleroSensor, 900);
+            senlist += " ACC ";
         }
 
-        if(gyroscopeSensor!=null)
-        {
-            sensorManager.registerListener(this,gyroscopeSensor,1000);
-
-
-        }
-        else
-        {
-            Constants.gyroString="gyroSensor: -9999";
+        if(magnetSensor != null) {
+            sensorManager.registerListener(this,magnetSensor, 900);
+            senlist += " MAG ";
         }
 
-        if(barometerSensor!=null)
-        {
-            sensorManager.registerListener(this,barometerSensor,1000);
-        }
-        else
-        {
-
-            Constants.baroString="barometer: -9999";
-
+        if(gyroscopeSensor != null) {
+            sensorManager.registerListener(this,gyroscopeSensor, 900);
+            senlist += " GYRO ";
         }
 
+        if(barometerSensor != null) {
+            sensorManager.registerListener(this,barometerSensor, 900);
+            senlist += " BARO ";
+        }
 
+        if(lightSensor != null) {
+            sensorManager.registerListener(this, lightSensor, 900);
+            senlist += " LHT ";
+        }
 
+        senlist += "]";
+        sensortxt.setText(senlist);
     }
 
     public void onSensorChanged(SensorEvent event) {
-        long curTime = System.currentTimeMillis();
-        long diff=curTime - lastUpdate;
-        Constants.acceloString="accelreometer: ";
-        Constants.magnet="magnet: ";
-
-        Constants.gyroString="gyroSensor: ";
-
-        boolean flag=false;
 
         try {
             int currType = event.sensor.getType();
-            if(currType== Sensor.TYPE_AMBIENT_TEMPERATURE)
-            {
-                flag=true;
-                Constants.temperature="temperature: "+event.values[0];
 
+            if(currType == Sensor.TYPE_AMBIENT_TEMPERATURE) {
+                Constants.temperature = "" + event.values[0];
             }
-            else if(currType== Sensor.TYPE_RELATIVE_HUMIDITY)
-            {
-                flag=true;
-                Constants.humidity= "humidity: "+event.values[0];
-
+            else if(currType == Sensor.TYPE_RELATIVE_HUMIDITY) {
+                Constants.humidity = "" + event.values[0];
             }
-
-            else if(currType== Sensor.TYPE_ACCELEROMETER)
-            {
-                if ((curTime - lastUpdate) > 1000)
-                {
-
-                    diff=curTime - lastUpdate;
-                    lastUpdate = curTime;
-
-
-                    flag=true;
-
-                    Constants.acceloString+="["+event.values[0]+" "+event.values[1]+" "+event.values[2]+"]";
-
-
-                }
+            else if(currType == Sensor.TYPE_ACCELEROMETER) {
+                    Constants.acceloString = event.values[0] + "\t" + event.values[1] + "\t" + event.values[2];
+            }
+            else if(currType == Sensor.TYPE_MAGNETIC_FIELD) {
+                    Constants.magnet = event.values[0] + "\t" + event.values[1] + "\t" + event.values[2];
+            }
+            else if(currType == Sensor.TYPE_GYROSCOPE) {
+                    Constants.gyroString = event.values[0] + "\t" + event.values[1] + "\t" + event.values[2];
+            }
+            else if(currType == Sensor.TYPE_PRESSURE) {
+                Constants.baroString = "" + event.values[0];
+            }
+            else if(currType == Sensor.TYPE_LIGHT) {
+                Constants.lightString = "" + event.values[0];
             }
 
-            else if(currType== Sensor.TYPE_MAGNETIC_FIELD)
-            {
-                if ((curTime - lastUpdate) > 1000)
-                {
-                    diff=curTime - lastUpdate;
-                    lastUpdate = curTime;
-                    flag=true;
+            /*We update the list of sensor values once every second*/
+            if(System.currentTimeMillis() - lastUpdate >= 1000) {
 
-
-                    Constants.magnet+="["+event.values[0]+" "+event.values[1]+" "+event.values[2]+"]";
-
-
-
-                }
-            }
-
-            else if(currType== Sensor.TYPE_GYROSCOPE)
-            {
-                if((curTime - lastUpdate) > 1000)
-                {
-                    diff=curTime - lastUpdate;
-                    lastUpdate = curTime;
-                    flag=true;
-
-                    Constants.gyroString+="["+event.values[0]+" "+event.values[1]+" "+event.values[2]+"]";
-
-                }
-
-            }
-
-            else if(currType== Sensor.TYPE_PRESSURE)
-            {
-                flag=true;
-                Constants.baroString="barometer: "+event.values[0];
-            }
-
-
-
-            if(flag==true)
-            {
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy MM dd HH mm ss");
                 String currentDateandTime = sdf.format(new Date());
 
-                String str= currentDateandTime+" "+Constants.temperature+"  "+Constants.humidity+" "+Constants.baroString+" "
-                        +Constants.acceloString+"  "+Constants.magnet+" "+Constants.gyroString;
+                String str = currentDateandTime + "\t" + Constants.temperature + "\t" +
+                        Constants.humidity + "\t" + Constants.baroString + "\t" +
+                        Constants.acceloString + "\t" + Constants.magnet +
+                        "\t" + Constants.gyroString + "\t" + Constants.lightString;
 
-                Constants.list.add(str);
+                Constants.ALL_SENSOR_STR = str;
+                //Constants.list.add(str);
+                lastUpdate = System.currentTimeMillis();
             }
 
-
-
-        }catch (Exception e)
-        {
+        }catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     /**
@@ -305,137 +206,77 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
-
-    public void startService(View view) {
-        Constants.experimentType="normal";
-        txt = (TextView) findViewById(R.id.textView2);
-        txt.setText("Service is Running!!!!");
-        startService(new Intent(getBaseContext(), MyService.class));
-       // wk.release();
-        if(wk.isHeld())
-        {
-            wk.release();
-        }
-        wk.acquire();
-        startButton.setEnabled(false);
-        endButton.setEnabled(true);
-      //  editButton.setEnabled(false);
-        humanButton.setEnabled(false);
-        SharedPreferences.Editor myEditor= pref.edit();
-        myEditor.putString("start", "yes");
-        myEditor.commit();
-
-    }
-
-
     public void startRepeatingTimer(View view) {
+
         Context context = this.getApplicationContext();
-        if(alarm != null){
-            alarm.SetAlarm(context);
-        }else{
-            Toast.makeText(context, "Alarm is null", Toast.LENGTH_SHORT).show();
+        Constants.experimentType = "normal";
+
+        /*if(alarm != null) { alarm.SetAlarm(context); }
+        else {Toast.makeText(context, "Alarm is null", Toast.LENGTH_SHORT).show();}*/
+
+        if(hvacMonitoringThread != null) {
+            hvacMonitoringThread.stopMonitoring();
+            hvacMonitoringThread = null;
         }
+        hvacMonitoringThread = new HvacMonitorThread();
+        hvacMonitoringThread.start();
 
         startButton.setEnabled(false);
         endButton.setEnabled(true);
-       // editButton.setEnabled(false);
         humanButton.setEnabled(false);
-        SharedPreferences.Editor myEditor= pref.edit();
+
+        SharedPreferences.Editor myEditor = pref.edit();
         myEditor.putString("start", "yes");
         myEditor.commit();
+
+        Toast.makeText(context, "HVAC Monitor Started", Toast.LENGTH_LONG).show();
     }
 
     public void cancelRepeatingTimer(View view){
         Context context = this.getApplicationContext();
-        if(alarm != null){
-            alarm.CancelAlarm(context);
-        }else{
-            Toast.makeText(context, "Alarm is null", Toast.LENGTH_SHORT).show();
+
+        /*if(alarm != null) {alarm.CancelAlarm(context);}
+        else {Toast.makeText(context, "Alarm is null", Toast.LENGTH_SHORT).show();}*/
+        if(hvacMonitoringThread != null) {
+            hvacMonitoringThread.stopMonitoring();
+            hvacMonitoringThread = null;
         }
 
-       // txt.setText("Service is stopped!!!!");
         startButton.setEnabled(true);
         endButton.setEnabled(false);
-       // editButton.setEnabled(true);
         humanButton.setEnabled(true);
 
         SharedPreferences.Editor myEditor= pref.edit();
         myEditor.putString("start", "no");
         myEditor.commit();
-
+        Toast.makeText(context, "HVAC Monitor Stopped", Toast.LENGTH_LONG).show();
     }
 
-
-    // Method to stop the service
-    public void stopService(View view) {
-
-        try {
-            txt.setText("Service is stopped!!!!");
-            startButton.setEnabled(true);
-            endButton.setEnabled(false);
-           // editButton.setEnabled(true);
-            humanButton.setEnabled(true);
-
-            SharedPreferences.Editor myEditor= pref.edit();
-            myEditor.putString("start", "no");
-            myEditor.commit();
-            txt = (TextView) findViewById(R.id.textView2);
-            txt.setText("Service is Stopped!!!!");
-            stopService(new Intent(getBaseContext(), MyService.class));
-            wk.release();
-
-
-
-        }catch (Exception e)
-        {
-            e.printStackTrace();
-        }
-
-
-    }
-
-
-    public void addListener()
-    {
-//        editButton.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View v) {
-//                Intent intent= new Intent(MainActivity.this, Editpage.class);
-//                startActivity(intent);
-//                finish();
-//
-//            }
-//        });
+    public void addListener() {
 
         humanButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Constants.experimentType="human";
-                txt = (TextView) findViewById(R.id.textView2);
-                txt.setText("Service is Running!!!!");
-               // startService(new Intent(getBaseContext(), MyService.class));
-                //wk.acquire();
 
-              //  Context context = this.getApplicationContext();
-                if(alarm != null){
-                    alarm.SetAlarm(textCon);
-                }else{
-                    Toast.makeText(textCon, "Alarm is null", Toast.LENGTH_SHORT).show();
+                Constants.experimentType = "human";
+
+                /*if (alarm != null) {alarm.SetAlarm(textCon);}
+                else {Toast.makeText(textCon, "Alarm is null", Toast.LENGTH_SHORT).show();}*/
+                if(hvacMonitoringThread != null) {
+                    hvacMonitoringThread.stopMonitoring();
+                    hvacMonitoringThread = null;
                 }
-
+                hvacMonitoringThread = new HvacMonitorThread();
+                hvacMonitoringThread.start();
 
                 startButton.setEnabled(false);
                 endButton.setEnabled(true);
-               // editButton.setEnabled(false);
                 humanButton.setEnabled(false);
-                SharedPreferences.Editor myEditor= pref.edit();
+
+                SharedPreferences.Editor myEditor = pref.edit();
                 myEditor.putString("start", "yes");
                 myEditor.commit();
-
             }
         });
-
-
-
     }
 }

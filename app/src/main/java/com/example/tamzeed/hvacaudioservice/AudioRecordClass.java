@@ -6,22 +6,19 @@ package com.example.tamzeed.hvacaudioservice;
 import android.media.*;
 import java.io.*;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 
 import android.os.*;
 import android.util.Log;
 
-/**
- * Created by Tamzeed on 4/3/16.
- */
 public class AudioRecordClass {
-    private long lastFilenum = 0;
-    // private byte audioData[] = null;
-    //private Thread recordingThread = null;
-    String tempName="";
-    String rawName="";
-    String fileName="";
-    String s="";
+
+    String fileDateTime = "";
+    String rawFileFullPath = ""; //fixed file path for temporary audio recording.
+    String fileNameWithDateTime = "";
+    String fileAbsolutePathWithDateTime = "";
+
     AudioRecord myRecorder;
     int bufferSize;
     byte audioData[];
@@ -33,32 +30,58 @@ public class AudioRecordClass {
     private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
     private static final String AUDIO_RECORDER_FILE_EXT_WAV = ".wav";
     private static final String AUDIO_RECORDER_FOLDER = "MicReader";
-    private static final String AUDIO_RECORDER_TEMP_FILE = "record_temp.raw";
     private static final int CHANNELS = 1;
+
+    private String AUDIO_RECORDER_TEMP_FILE = "record_temp.raw";
+    private ArrayList<String> sensorValues = new ArrayList<String>();
+    Thread sensorRecordingThread = null;
 
     public void startRecord()
     {
-        if(isrunning==false)
+        if(isrunning == false)
         {
+            AUDIO_RECORDER_TEMP_FILE = System.currentTimeMillis() + ".raw"; //to avoid race condition on single raw file by consecutive Alarm tasks.
+            sensorValues.clear();
+
             bufferSize= AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
             audioData =new byte[bufferSize];
 
-            Log.v("SN", "After builder");
             myRecorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
                     RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING, 10*bufferSize);
 
             myRecorder.startRecording();
-            Log.v("SN", "Before builder");
+
             recordingThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     recording();
                 }
-            },"AudioRecorder Thread");
+            },"Audio Recorder Thread");
 
+            sensorRecordingThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    sensorRecording();
+                }
+            },"Sensor Recorder Thread");
+
+            sensorRecordingThread.start();
             recordingThread.start();
         }
+    }
 
+    public void sensorRecording()
+    {
+        for(int i = 0; i < Constants.AUDIO_FILE_DURATION_MS; i+=1000){
+
+            sensorValues.add(Constants.ALL_SENSOR_STR);
+
+            try {
+                Thread.sleep(1000);
+            }catch(Exception ex){
+                ex.printStackTrace();
+            }
+        }
     }
 
     public void recording()
@@ -67,121 +90,107 @@ public class AudioRecordClass {
         int bn;
         try {
             isrunning = true;
-            FileOutputStream fos = new FileOutputStream(getTempFilename());
+
+            rawFileFullPath = getTempFilename(); //it's /sdcard/MicReader/record_temp.raw
+            FileOutputStream fos = new FileOutputStream(rawFileFullPath);
+
             t1 = System.currentTimeMillis();
-            while (isrunning==true)
+
+            while (isrunning == true)
             {
                 bn = myRecorder.read(audioData, 0, bufferSize);
                 if(bn != AudioRecord.ERROR_INVALID_OPERATION) {
                     fos.write(audioData);
                 }
                 t2 = System.currentTimeMillis();
-                if(t2-t1 >= 60000) { //e.g., 30 sec
+                if(t2-t1 >= Constants.AUDIO_FILE_DURATION_MS) { //60000 ms
                     isrunning = false;
                 }
             }
             fos.close();
 
-            Log.d("TAG", "Stoppinggg");
             myRecorder.stop();
             myRecorder.release();
-            copyWaveFile(s, getFilename());
 
-            //String url= "http://s200.bcn.ufl.edu/HVAC/fileUp.php";
-            sensorFile(tempName);
-            new sendFile().execute("sensor_" + tempName, "sensor", this.rawName);
-            new sendFile().execute(this.fileName, "normal", this.rawName);
+            fileAbsolutePathWithDateTime = getFileAbsolutePath(); //also sets fileDateTime, fileNameWithDateTime
+            copyWaveFile(rawFileFullPath, fileAbsolutePathWithDateTime); //from record_temp.raw to a datedfile
+            new sendFile().execute(this.fileNameWithDateTime, Constants.experimentType, this.rawFileFullPath);
 
-        }catch (Exception e)
-        {
+            sensorRecordingThread.join();
+            sensorFile(fileDateTime);
+            new sendFile().execute(Constants.deviceName + "_sensor_" + fileDateTime + ".txt", "sensor", this.rawFileFullPath);
+
+        }catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void sensorFile(String fileTemp)
+    private void sensorFile(String fileDateTimeParam)
     {
-
         try {
-
-            String content= Constants.temperature+"     "+Constants.humidity;
-
-            Log.d("cont", content);
-
             File root = new File(Environment.getExternalStorageDirectory(), "Notes");
+
             if (!root.exists()) {
                 root.mkdirs();
             }
-            File gpxfile = new File(root, "sensor_"+fileTemp+".txt");
+
+            File gpxfile = new File(root, Constants.deviceName + "_sensor_" + fileDateTimeParam + ".txt");
             FileWriter writer = new FileWriter(gpxfile);
-            for (int i=0;i<Constants.list.size();i++)
-            {
 
-                writer.append(Constants.list.get(i));
-
+            for (int i = 0; i < sensorValues.size(); i++) {
+                writer.append(sensorValues.get(i));
                 writer.write(System.getProperty("line.separator"));
-
+                writer.flush();
             }
             writer.write(System.getProperty("line.separator"));
-           // writer.append(content);
             writer.flush();
             writer.close();
-
-            Constants.list.clear();
-
-
-        }catch (Exception e)
-        {
+            //Constants.list.clear();
+            sensorValues.clear();
+        }catch (Exception e) {
             e.printStackTrace();
         }
-
-
     }
 
-    private String getFilename(){
-        String filepath = Environment.getExternalStorageDirectory().getPath();
-        File file = new File(filepath,AUDIO_RECORDER_FOLDER);
+    private String getFileAbsolutePath() {
 
-        if(!file.exists()){
+        String filepath = Environment.getExternalStorageDirectory().getPath();
+        File file = new File(filepath, AUDIO_RECORDER_FOLDER);
+
+        if(!file.exists()) {
             file.mkdirs();
         }
-       // lastFilenum = System.currentTimeMillis();
 
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy_MM_dd_HH_mm_ss");
         String currentDateandTime = sdf.format(new Date());
-        tempName= currentDateandTime;
-        if(Constants.experimentType=="human")
-        {
-            s="/"+"human_"+Constants.deviceName+"_recordings_"+currentDateandTime;
+        fileDateTime = currentDateandTime;
+
+        if(Constants.experimentType == "human") {
+            this.fileNameWithDateTime = Constants.deviceName + "_human_" +
+                    currentDateandTime + AUDIO_RECORDER_FILE_EXT_WAV;
         }
-        else
-            s= "/"+Constants.deviceName+"_recordings_"+currentDateandTime;
-        Log.d("file name",file.getAbsolutePath() + "/" + s+ AUDIO_RECORDER_FILE_EXT_WAV);
-        this.fileName=s+ AUDIO_RECORDER_FILE_EXT_WAV;
-        return (file.getAbsolutePath() + "/" + this.fileName);
+        else {
+            this.fileNameWithDateTime = Constants.deviceName + "_hvac_" +
+                    currentDateandTime + AUDIO_RECORDER_FILE_EXT_WAV;
+        }
+
+        return (file.getAbsolutePath() + "/" + this.fileNameWithDateTime);
     }
 
 
     private String getTempFilename(){
         String filepath = Environment.getExternalStorageDirectory().getPath();
-        File file = new File(filepath,AUDIO_RECORDER_FOLDER);
+        File file = new File(filepath, AUDIO_RECORDER_FOLDER);
 
         if(!file.exists()){
             file.mkdirs();
         }
 
-        File tempFile = new File(filepath,AUDIO_RECORDER_TEMP_FILE);
-
-//        if(tempFile.exists())
-//            tempFile.delete();
-
-        lastFilenum = System.currentTimeMillis();
-        s=file.getAbsolutePath() + "/" +lastFilenum+ AUDIO_RECORDER_TEMP_FILE;
-        this.rawName=lastFilenum+ AUDIO_RECORDER_TEMP_FILE;
-        return s;
+        return file.getAbsolutePath() + "/" + AUDIO_RECORDER_TEMP_FILE;
     }
 
 
-    private void copyWaveFile(String inFilename,String outFilename) {
+    private long copyWaveFile(String inFilename, String outFilename) {
         FileInputStream in = null;
         FileOutputStream out = null;
         long totalAudioLen = 0;
@@ -191,6 +200,7 @@ public class AudioRecordClass {
         long byteRate = RECORDER_BPP * RECORDER_SAMPLERATE * channels/8;
 
         byte[] data = new byte[bufferSize];
+        long ret = 0;
 
         try {
             in = new FileInputStream(inFilename);
@@ -198,24 +208,28 @@ public class AudioRecordClass {
             totalAudioLen = in.getChannel().size();
             totalDataLen = totalAudioLen + 36;
 
-
-
             WriteWaveFileHeader(out, totalAudioLen, totalDataLen,
                     longSampleRate, channels, byteRate);
 
+            ret = 0;
             while(in.read(data) != -1){
                 out.write(data);
+                ret++;
             }
 
             in.close();
             out.close();
 
-            Log.d("FILENAME:: ",Constants.fileName);
+
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        ret = ret * bufferSize;
+        Log.v("SN", "File Size Copied: " + ret);
+        return ret;
     }
 
 

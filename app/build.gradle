@@ -6,8 +6,8 @@ android {
 
     defaultConfig {
         applicationId "com.example.tamzeed.hvacaudioservice"
-        minSdkVersion 14
-        targetSdkVersion 23
+        minSdkVersion 18
+        targetSdkVersion 18
         versionCode 1
         versionName "1.0"
     }
